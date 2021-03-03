@@ -1,0 +1,255 @@
+{% extends 'raiz_vendas.html' %}
+{% block pagina %}
+<div class="header">
+    <div class="row">
+        <div class="col-md-9">
+            <h2 align="start">Vendas</h2>
+        </div>
+        <div class="col-md-3" align="end">
+            <button type="button" class="btn-circle btn-success" data-toggle="modal" data-target="#modal_venda"><i class="fas fa-plus"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <br>
+    <table class="table table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Data</th>
+            <th scope="col">Produtos</th>
+            <th scope="col">Total</th>
+            <th scope="col">Situação</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for venda in vendas %}
+        <tr>
+            <td>{{ venda.data|date:'d/m/Y - H:i' }}</td>
+            <td>
+                {% if venda.produto_vendas|length > 3 %}
+                <span class="badge badge-pill produtos">
+                        {{ venda.produto_vendas.0.quantidade }} x {{ venda.produto_vendas.0.produto.nome }}
+                    </span>
+                <span class="badge badge-pill produtos">
+                        {{ venda.produto_vendas.1.quantidade }} x {{ venda.produto_vendas.1.produto.nome }}
+                    </span>
+                <span class="badge badge-pill produtos">
+                        {{ venda.produto_vendas.2.quantidade }} x {{ venda.produto_vendas.2.produto.nome }}
+                    </span>
+                <span class="badge badge-pill produtos">
+                        <form method='GET'><button class="btn-transparente" type="submit" id="venda" name="venda" value="{{venda.id}}">...</button></form>
+                    </span>
+                {% else %}
+                {% for produto_venda in venda.produto_vendas %}
+                <span class="badge badge-pill produtos">
+                        {{ produto_venda.quantidade }} x {{ produto_venda.produto.nome }}
+                    </span>
+                {% endfor %}
+                {% endif %}
+            </td>
+            <td>
+                {{ venda.lucro_total }} RS <br>
+            </td>
+            <td>
+                {% if venda.situacao %}
+                <span class="badge badge-pill badge-danger fiado">FIADO</span>
+                {% else %}
+                <span class="badge badge-pill badge-success fiado">PAGO</span>
+                {% endif %}
+            </td>
+            <td>
+                <form id="delete" action="{% url 'venda:deletaProdutoVenda' id=venda.id page=vendas.number %}" method="post">
+                    {% csrf_token %}
+                    <button class="btn-lixeira" type="submit">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div align="start" class="col-md-12">
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal_produto">Adicionar Produto</button>
+    <div class="float-right">
+        {% if vendas.has_other_pages %}
+        <ul class="pagination">
+            {% if vendas.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ vendas.previous_page_number }}">&laquo;</a></li>
+            {% else %}
+            <li class="page-item"><a class="page-link">&laquo;</a></li>
+            {% endif %}
+            {% for i in vendas.paginator.page_range %}
+            {% if vendas.number == i %}
+            <li class="page-item"><a class="page-link">{{ i }} <span class="sr-only">(current)</span></a></li>
+            {% elif i <= 2 or i >= numero_paginas %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% if vendas.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ vendas.next_page_number }}">&raquo;</a></li>
+            {% else %}
+            <li class="page-item"><a class="page-link">&raquo;</a></li>
+            {% endif %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="modal_produto" tabindex="-1" role="dialog" aria-labelledby="produto_label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="produto_label">Produto</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'venda:cadastraProduto' %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="nome">Nome</label>
+                        <input type="text" class="form-control" id="nome" name="nome" placeholder="Nome do produto">
+                        <small id="emailHelp" class="form-text text-muted"></small>
+                    </div>
+                    <div class="form-group">
+
+                        <label for="valor">Preço</label>
+                        <div class="input-group ">
+                            <input type="text" class="form-control" id="valor" name="valor" placeholder="Valor do produto">
+                            <span class="input-group-text">R$</span>
+                            <small id="emailHel" class="form-text text-muted"></small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal_venda" tabindex="-1" role="dialog" aria-labelledby="venda_label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="venda_label">Venda</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method='GET'>
+                    <div class="input-group mb-3">
+                        <input type="text" name="pesquisa" id="pesquisa" value="{{pesquisa}}" class="form-control" type="submit">
+                        <div class="input-group-prepend">
+                            <button class="btn-transparente" type="submit"><i class="fas fa-search input-group-text"></i></button>
+                        </div>
+                    </div>
+                </form>
+                <form action="{% url 'venda:vendas' %}" method="post">
+                    {% csrf_token %}
+                    <div class="modal-venda">
+                        {% for produto in produtos %}
+                        <div class="row venda-selecao">
+                            <div class="col-md-6">
+                                <div class="form-check venda-check">
+                                    <input type="checkbox" class="form-check-input" id="produto_{{ produto.id }}" name="produto_{{ produto.id }}">
+                                    <label class="form-check-label" for="produto_{{ produto.id }}">{{ produto.id }} - {{ produto.nome }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6" align="center">
+                                <div class="input-group">
+                                    <div class="col">
+                                        <input type="number" class="form-control input-number" id="quantidade_{{produto.id}}" name="quantidade_{{produto.id}}" value="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        {% endfor %}
+                    </div>
+                    <br>
+
+                    <div class="modal-footer">
+                        <div class="col">
+                            <input type="checkbox" class="form-check-input" id="fiado" name="fiado">
+                            <label class="form-check-label" for="fiado">Fiado</label>
+                        </div>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal_lista_produtos" tabindex="-1" role="dialog" aria-labelledby="modal_lista_produtos_label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Venda</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% for produto_venda in venda_modal.produto_vendas %}
+                <span class="badge badge-pill produtos-modal">
+                    {{ produto_venda.quantidade }} x {{ produto_venda.produto.nome }}
+                </span>
+                {% endfor %}
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    if({{modal_venda}}){
+        $('#modal_venda').modal('show');
+    }
+</script>
+
+<script type="text/javascript">
+    if({{modal_lista_produtos}}){
+        $('#modal_lista_produtos').modal('show');
+    }
+</script>
+{% endblock %}
+
+<!--<button type="button" onClick="abraModal()"> Abrir modal</button>-->
+<!--<div class="modal" id="modalJ" tabindex="-1" role="dialog">-->
+<!--    <div class="modal-dialog" role="document">-->
+<!--        <div class="modal-content">-->
+<!--            <div class="modal-header">-->
+<!--                <h5 class="modal-title">Modal title</h5>-->
+<!--                <button type="button" class="close" data-dismiss="modal" aria-label="Close">-->
+<!--                    <span aria-hidden="true">&times;</span>-->
+<!--                </button>-->
+<!--            </div>-->
+<!--            <div class="modal-body">-->
+<!--                <p>Modal body text goes here.</p>-->
+<!--            </div>-->
+<!--            <div class="modal-footer">-->
+<!--                <button type="button" class="btn btn-primary">Save changes</button>-->
+<!--                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+<!--<script type="text/javascript">-->
+<!--    function abraModal(){-->
+<!--        $('#modalJ').modal('show');-->
+<!--    }-->
+<!--</script>-->

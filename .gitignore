@@ -1,0 +1,4 @@
+venv
+venda/migrations
+venda.sqlite3
+.idea
